@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>El Planeta M · ma me mi mo mu</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;padding:0;height:100%}
+body{font-family:ui-rounded,'SF Pro Rounded','Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#2a2560 0%,#4a3a8c 45%,#7a5fc0 100%);color:#fff;overflow:hidden;position:fixed;inset:0}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;transition:opacity .35s;opacity:0;pointer-events:none}
+.screen.on{opacity:1;pointer-events:auto}
+.stars-bg{position:absolute;inset:0;pointer-events:none;z-index:0}
+.stars-bg i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.5;animation:tw 3s infinite}
+@keyframes tw{0%,100%{opacity:.15}50%{opacity:.7}}
+h1{font-size:clamp(26px,7vw,44px);margin:0 0 4px;text-align:center;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.sub{font-size:15px;opacity:.85;margin:0 0 14px;text-align:center}
+.bigbtn{border:0;border-radius:26px;padding:18px 34px;font-size:26px;font-weight:800;font-family:inherit;color:#4a2c00;background:linear-gradient(180deg,#ffd76a,#ffb52e);box-shadow:0 6px 0 #c47f00,0 10px 18px rgba(0,0,0,.35);cursor:pointer;transition:transform .08s}
+.bigbtn:active{transform:translateY(4px);box-shadow:0 2px 0 #c47f00}
+.iconbtn{border:0;border-radius:50%;width:52px;height:52px;font-size:24px;background:rgba(255,255,255,.18);color:#fff;cursor:pointer;font-family:inherit}
+.top{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 12px;z-index:5}
+.starcount{font-size:20px;font-weight:800;background:rgba(0,0,0,.25);border-radius:99px;padding:8px 16px}
+svg#map{width:min(88vw,420px);height:auto;display:block;z-index:1}
+.mapdot{cursor:pointer}
+.mapdot.locked{cursor:default}
+#game{justify-content:flex-start;padding-top:74px}
+.qrow{display:flex;align-items:center;gap:12px;margin:6px 0 4px;z-index:2}
+.qtext{font-size:clamp(22px,6vw,34px);font-weight:800;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.dots{display:flex;gap:8px;margin:8px 0 10px}
+.dots i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.25)}
+.dots i.done{background:#ffd76a}
+.cards{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-content:center;flex:1;width:100%;max-width:560px;z-index:2}
+.card{border:0;border-radius:28px;min-width:130px;min-height:120px;padding:10px 22px;font-family:inherit;font-size:clamp(44px,13vw,64px);font-weight:900;color:#3b2a75;background:linear-gradient(180deg,#fff,#e9e2ff);box-shadow:0 7px 0 #b7a6ee,0 12px 20px rgba(0,0,0,.3);cursor:pointer;transition:transform .1s}
+.card:active{transform:scale(.95)}
+.card.small{min-width:104px;min-height:96px;font-size:clamp(34px,9vw,46px)}
+.card.word{font-size:clamp(30px,9vw,46px)}
+.card.good{animation:pop .5s;background:linear-gradient(180deg,#d9ffd9,#8be28b);box-shadow:0 7px 0 #4da34d}
+.card.bad{animation:wig .4s}
+.card.hint{animation:pulse 1s infinite}
+.card.gone{opacity:0;pointer-events:none;transform:scale(.3)}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes wig{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+@keyframes pulse{0%,100%{box-shadow:0 7px 0 #b7a6ee,0 0 0 0 rgba(255,215,106,.9)}50%{box-shadow:0 7px 0 #b7a6ee,0 0 0 14px rgba(255,215,106,0)}}
+.slots{display:flex;gap:10px;justify-content:center;margin:10px 0;z-index:2}
+.slot{width:110px;height:100px;border-radius:22px;border:4px dashed rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:900;color:#fff}
+.slot.filled{border-style:solid;background:rgba(255,255,255,.92);color:#3b2a75;border-color:#ffd76a}
+.slot.wordslot{width:auto;min-width:86px;padding:0 12px;height:84px;font-size:30px}
+.bob{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.emoji{font-size:clamp(56px,16vw,90px);z-index:2;line-height:1}
+#ovl{position:absolute;inset:0;background:rgba(20,12,60,.72);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:20}
+#ovl.on{display:flex}
+.winstar{font-size:110px;animation:pop .6s}
+.wintxt{font-size:30px;font-weight:900;margin:8px 0 18px;text-align:center}
+.conf{position:absolute;top:-20px;font-size:22px;animation:fall linear forwards;z-index:30;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+details.adult{position:absolute;bottom:8px;left:10px;right:10px;z-index:6;background:rgba(0,0,0,.35);border-radius:12px;padding:6px 10px;font-size:12px;line-height:1.5;max-height:45vh;overflow:auto}
+details.adult summary{cursor:pointer;font-weight:700;opacity:.8}
+.crown{font-size:120px;animation:bob 2s ease-in-out infinite}
+.phrase-final{font-size:clamp(30px,9vw,52px);font-weight:900;text-align:center;margin:10px 0;text-shadow:0 3px 0 rgba(0,0,0,.3)}
+</style>
+</head>
+<body>
+<div class="stars-bg" id="starsbg"></div>
+
+<div class="top">
+  <button class="iconbtn" id="homeBtn" title="mapa">🪐</button>
+  <div class="starcount">⭐ <span id="starN">0</span></div>
+  <div style="display:flex;gap:8px">
+    <button class="iconbtn" id="sayBtn" title="repetir">🔊</button>
+    <button class="iconbtn" id="muteBtn" title="sonido">🔈</button>
+  </div>
+</div>
+
+<div class="screen on" id="scrMap">
+  <h1>El Planeta M</h1>
+  <p class="sub">ma · me · mi · mo · mu — toca la estrella que brilla</p>
+  <svg id="map" viewBox="0 0 420 420"></svg>
+  <button class="bigbtn" id="playBtn" style="margin-top:8px">▶ Jugar</button>
+  <details class="adult"><summary>Para el adulto 👋</summary>
+    Diez niveles en órbita: primero cada sílaba (escuchar y tocar), luego la pesca de repaso, armar <b>mamá</b> y <b>mimo</b>, reconocer palabras, y al final armar la frase <b>mi mamá me ama</b>. La voz usa el sintetizador del teléfono en español (funciona sin internet; si no se oye, suba el volumen o toque 🔊 para repetir — y usted puede leer los letreros en voz alta, el juego funciona igual). Equivocarse solo hace temblar la tarjeta; a los dos intentos, la correcta parpadea como pista. Sesiones cortas: uno o dos niveles por día rinden más que todo de un jalón. El progreso vive mientras la página esté abierta.
+  </details>
+</div>
+
+<div class="screen" id="scrGame">
+  <div class="qrow"><div class="qtext" id="qText"></div></div>
+  <div class="dots" id="dots"></div>
+  <div class="emoji" id="qEmoji"></div>
+  <div class="slots" id="slots" style="display:none"></div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<div class="screen" id="scrFinal">
+  <div class="crown">👑</div>
+  <div class="phrase-final">mi mamá<br>me ama</div>
+  <p class="sub">¡Leíste la frase entera! Eres campeón del Planeta M.</p>
+  <button class="bigbtn" id="againBtn">Jugar otra vez</button>
+</div>
+
+<div id="ovl">
+  <div class="winstar">⭐</div>
+  <div class="wintxt" id="winTxt">¡Muy bien!</div>
+  <button class="bigbtn" id="nextBtn">Seguir ➜</button>
+</div>
+
+<script>
+"use strict";
+// ================== audio: voice + sfx (all local, no network) ==================
+var muted=false, esV=null, AC=null;
+function pickVoice(){ if(!window.speechSynthesis) return;
+  var vs=speechSynthesis.getVoices();
+  esV = vs.find(function(v){return /es[-_]MX/i.test(v.lang);})
+     || vs.find(function(v){return /es[-_](419|US)/i.test(v.lang);})
+     || vs.find(function(v){return /^es/i.test(v.lang);}) || null; }
+if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+function speak(txt,rate,cb){
+  if(muted||!window.speechSynthesis){ if(cb)cb(); return; }
+  try{ speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(txt);
+    if(esV) u.voice=esV; u.lang=(esV&&esV.lang)||"es-MX";
+    u.rate=rate||0.86; u.pitch=1.15;
+    if(cb){ u.onend=cb; u.onerror=cb; }
+    speechSynthesis.speak(u);
+  }catch(e){ if(cb)cb(); }
+}
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(AC&&AC.state==="suspended") AC.resume(); return AC; }
+function tone(f,t0,dur,type,vol){ var c=ac(); if(!c) return;
+  var o=c.createOscillator(), g=c.createGain();
+  o.type=type||"sine"; o.frequency.value=f;
+  g.gain.setValueAtTime(0.0001,c.currentTime+t0);
+  g.gain.exponentialRampToValueAtTime(vol||0.25,c.currentTime+t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+t0+dur);
+  o.connect(g).connect(c.destination); o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur+0.05); }
+function sfxGood(){ if(muted)return; tone(523,0,0.12);tone(659,0.09,0.12);tone(784,0.18,0.2); }
+function sfxTry(){ if(muted)return; tone(220,0,0.15,"triangle",0.18); }
+function sfxWin(){ if(muted)return; [523,659,784,1047].forEach(function(f,i){tone(f,i*0.11,0.22);}); tone(1319,0.46,0.4); }
+function sfxTap(){ if(muted)return; tone(880,0,0.05,"triangle",0.12); }
+
+// ================== levels ==================
+var LEVELS=[
+ {name:"ma", icon:"🌟", type:"tap", target:"ma", pool:["ma","mo"], rounds:3, intro:"¡Hola! Esta es la sílaba ma. ¡Toca donde dice ma!"},
+ {name:"me", icon:"🌟", type:"tap", target:"me", pool:["me","ma","mu"], rounds:3, intro:"Ahora la sílaba me. ¡Toca donde dice me!"},
+ {name:"mi", icon:"🌟", type:"tap", target:"mi", pool:["mi","me","mo"], rounds:3, intro:"Esta es mi. ¡Toca donde dice mi!"},
+ {name:"mo", icon:"🌟", type:"tap", target:"mo", pool:["mo","mu","ma"], rounds:3, intro:"Esta es mo, con la boca redonda. ¡Toca donde dice mo!"},
+ {name:"mu", icon:"🐄", type:"vaca", target:"mu", pool:["mu","mi","mo"], rounds:3, intro:"¡Muuu! La vaca dice mu. ¡Toca donde dice mu!"},
+ {name:"pesca", icon:"🎣", type:"pesca", pool:["ma","me","mi","mo","mu"], rounds:5, intro:"¡A pescar sílabas! Escucha bien."},
+ {name:"mamá", icon:"💛", type:"build", word:"mamá", say:"mamá", parts:["ma","má"], extra:["mi"], intro:"¡Vamos a armar una palabra muy especial: mamá!"},
+ {name:"mimo", icon:"🤗", type:"build", word:"mimo", say:"mimo", parts:["mi","mo"], extra:["mu","ma"], intro:"Ahora vamos a armar la palabra mimo. ¡Y luego pide tu mimo de verdad!"},
+ {name:"palabras", icon:"📖", type:"wtap", words:["mamá","mimo","ama"], rounds:3, intro:"¡Ya lees palabras! Escucha y toca."},
+ {name:"la frase", icon:"👑", type:"phrase", words:["mi","mamá","me","ama"], intro:"¡El gran final! Vamos a armar: mi mamá me ama."}
+];
+var unlocked=0, stars=0, curLv=-1, roundI=0, misses=0, buildI=0, lastPrompt="";
+
+// ================== helpers ==================
+function $(id){ return document.getElementById(id); }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function show(id){ ["scrMap","scrGame","scrFinal"].forEach(function(s){ $(s).classList.toggle("on",s===id); }); }
+function confetti(n){ for(var i=0;i<(n||34);i++){ var d=document.createElement("div"); d.className="conf";
+  d.textContent=["🎉","⭐","💛","✨","🎈"][i%5];
+  d.style.left=(Math.random()*100)+"vw"; d.style.animationDuration=(2.2+Math.random()*2)+"s";
+  d.style.fontSize=(16+Math.random()*22)+"px";
+  document.body.appendChild(d); setTimeout(function(el){return function(){el.remove();};}(d),4600); } }
+function setPrompt(txt,sayTxt){ $("qText").textContent=txt; lastPrompt=sayTxt||txt; }
+function dots(total,done){ var h=""; for(var i=0;i<total;i++) h+='<i class="'+(i<done?"done":"")+'"></i>'; $("dots").innerHTML=h; }
+
+// starry background
+(function(){ var h=""; for(var i=0;i<40;i++) h+='<i style="left:'+Math.random()*100+'vw;top:'+Math.random()*100+'vh;animation-delay:'+(Math.random()*3)+'s"></i>'; $("starsbg").innerHTML=h; })();
+
+// ================== orb map (the level selector is still an orb) ==================
+var mLon=0, mapTimer=null;
+function mapPts(){ return LEVELS.map(function(L,i){
+  return { i:i, lon:(i*67)%360, lat:52-(104*i/(LEVELS.length-1)) }; }); }
+function proj(lon,lat){ var la=lat*Math.PI/180, lo=(lon+mLon)*Math.PI/180;
+  var x=Math.cos(la)*Math.sin(lo), y=Math.sin(la), z=Math.cos(la)*Math.cos(lo);
+  var t=12*Math.PI/180, y2=y*Math.cos(t)-z*Math.sin(t), z2=y*Math.sin(t)+z*Math.cos(t);
+  return {x:210+168*x, y:210-168*y2, z:z2, front:z2>-0.02}; }
+function drawMap(){
+  var pts=mapPts(), out=[];
+  out.push('<circle cx="210" cy="210" r="168" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>');
+  for(var k=-1;k<=1;k++){ var lat=k*34, seg=[];
+    for(var lo=0;lo<=360;lo+=6){ var q=proj(lo,lat); if(q.front) seg.push(q.x.toFixed(1)+","+q.y.toFixed(1)); else { if(seg.length>1) out.push('<polyline points="'+seg.join(" ")+'" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>'); seg=[]; } }
+    if(seg.length>1) out.push('<polyline points="'+seg.join(" ")+'" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>'); }
+  // path through consecutive points (front-only straight-ish arcs)
+  for(var i=1;i<pts.length;i++){ var seg2=[], a=pts[i-1], b=pts[i];
+    for(var u=0;u<=1.001;u+=0.1){ var q=proj(a.lon+(b.lon-a.lon)*u, a.lat+(b.lat-a.lat)*u);
+      if(q.front) seg2.push(q.x.toFixed(1)+","+q.y.toFixed(1)); else { if(seg2.length>1) out.push('<polyline points="'+seg2.join(" ")+'" fill="none" stroke="rgba(255,215,106,'+(i<=unlocked?0.75:0.2)+')" stroke-width="3" stroke-dasharray="1 7" stroke-linecap="round"/>'); seg2=[]; } }
+    if(seg2.length>1) out.push('<polyline points="'+seg2.join(" ")+'" fill="none" stroke="rgba(255,215,106,'+(i<=unlocked?0.75:0.2)+')" stroke-width="3" stroke-dasharray="1 7" stroke-linecap="round"/>'); }
+  var nodes=pts.map(function(p){ var q=proj(p.lon,p.lat); return {p:p,q:q}; }).sort(function(a,b){return a.q.z-b.q.z;});
+  nodes.forEach(function(n){
+    var i=n.p.i, q=n.q, L=LEVELS[i];
+    var done=i<unlocked, next=i===unlocked, lock=i>unlocked;
+    var r=next?26:(done?20:14);
+    var op=q.front?1:0.35;
+    var g='<g class="mapdot'+(lock?" locked":"")+'" data-lv="'+i+'" opacity="'+op+'">';
+    if(next&&q.front) g+='<circle cx="'+q.x+'" cy="'+q.y+'" r="'+(r+8)+'" fill="none" stroke="#ffd76a" stroke-width="3"><animate attributeName="r" values="'+(r+4)+';'+(r+14)+';'+(r+4)+'" dur="1.6s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.9;0;0.9" dur="1.6s" repeatCount="indefinite"/></circle>';
+    g+='<circle cx="'+q.x+'" cy="'+q.y+'" r="'+r+'" fill="'+(done?"#ffd76a":(next?"#fff":"rgba(255,255,255,0.25)"))+'" stroke="rgba(0,0,0,0.25)" stroke-width="2"/>';
+    g+='<text x="'+q.x+'" y="'+(q.y+r*0.36)+'" text-anchor="middle" font-size="'+(r*1.05)+'">'+(done?"⭐":(lock?"🔒":L.icon))+'</text>';
+    if(q.front&&(next||done)) g+='<text x="'+q.x+'" y="'+(q.y+r+16)+'" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">'+L.name+'</text>';
+    g+='</g>'; out.push(g);
+  });
+  $("map").innerHTML=out.join("");
+  $("map").querySelectorAll(".mapdot").forEach(function(el){
+    el.addEventListener("click",function(){ var i=parseInt(el.getAttribute("data-lv"),10);
+      if(i<=unlocked&&i<LEVELS.length){ sfxTap(); startLevel(i); } });
+  });
+}
+function mapLoop(){ mLon=(mLon+0.22)%360; drawMap(); mapTimer=requestAnimationFrame(mapLoop); }
+function stopMap(){ if(mapTimer){ cancelAnimationFrame(mapTimer); mapTimer=null; } }
+// ================== game engine ==================
+var roundTarget="";
+function startLevel(i){
+  curLv=i; roundI=0; misses=0; buildI=0; roundLive=false;
+  stopMap(); show("scrGame");
+  var L=LEVELS[i];
+  $("qEmoji").textContent = L.type==="vaca"?"🐄":(L.type==="pesca"?"🎣":(L.type==="build"?(L.word==="mamá"?"💛":"🤗"):(L.type==="phrase"?"👑":"🚀")));
+  $("slots").style.display = (L.type==="build"||L.type==="phrase")?"flex":"none";
+  setPrompt("Nivel: "+L.name, L.intro);
+  dots(L.rounds|| (L.type==="build"?L.parts.length:(L.type==="phrase"?L.words.length:1)), 0);
+  var started=false; function go(){ if(started) return; started=true; nextRound(); }
+  speak(L.intro, 0.9, go);
+  setTimeout(go, (window.speechSynthesis&&!muted)?6000:400); // safety if onend never fires
+}
+var roundLive=false;
+function nextRound(){
+  if(roundLive) return; roundLive=true; misses=0;
+  var L=LEVELS[curLv];
+  if(L.type==="tap"||L.type==="vaca"||L.type==="pesca"||L.type==="wtap"){
+    if(roundI>=L.rounds){ roundLive=false; return levelDone(); }
+    dots(L.rounds, roundI);
+    if(L.type==="wtap"){ roundTarget=L.words[roundI%L.words.length]; renderTapCards(shuffle(L.words),roundTarget,true);
+      setPrompt("¿Dónde dice "+roundTarget+"?"); speak("¿Dónde dice "+roundTarget+"?"); }
+    else if(L.type==="pesca"){ roundTarget=shuffle(L.pool)[0]; renderTapCards(shuffle(L.pool),roundTarget,false,true);
+      setPrompt("Pesca: "+roundTarget); speak("¡Pesca la sílaba "+roundTarget+"!"); }
+    else { roundTarget=L.target; var opts=shuffle(L.pool);
+      renderTapCards(opts,roundTarget,false);
+      var q=(L.type==="vaca")?"¡Muuu! ¿Dónde dice mu?":"¿Dónde dice "+roundTarget+"?";
+      setPrompt(q); speak(q); }
+  } else if(L.type==="build"){ renderBuild(L); }
+  else if(L.type==="phrase"){ renderPhrase(L); }
+}
+function renderTapCards(opts,target,word,bob){
+  var h=""; opts.forEach(function(o,i){
+    h+='<button class="card'+(word?" word":"")+(opts.length>3?" small":"")+(bob?" bob":"")+'" data-v="'+o+'" style="animation-delay:'+(i*0.25)+'s">'+o+'</button>'; });
+  $("cards").innerHTML=h;
+  $("cards").querySelectorAll(".card").forEach(function(c){
+    c.addEventListener("click",function(){ onTap(c,target); });
+  });
+}
+function onTap(c,target){
+  ac();
+  if(c.getAttribute("data-v")===
