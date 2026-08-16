@@ -63,6 +63,12 @@ details.adult summary{cursor:pointer;font-weight:700;opacity:.8}
 <body>
 <div class="stars-bg" id="starsbg"></div>
 
+<!-- Touch start overlay for mobile to unlock audio/speech -->
+<div id="touchStart" style="display:none;position:fixed;inset:0;z-index:60;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(10,8,30,0.95),rgba(10,8,30,0.85));flex-direction:column;padding:20px;text-align:center;">
+  <button class="bigbtn" id="startBtn" style="font-size:28px;padding:18px 28px;border-radius:18px">Tocar para empezar</button>
+  <div style="margin-top:14px;color:rgba(255,255,255,0.9);font-size:14px;">Toque para habilitar sonido y comenzar</div>
+</div>
+
 <div class="top">
   <button class="iconbtn" id="homeBtn" title="mapa">🪐</button>
   <div class="starcount">⭐ <span id="starN">0</span></div>
@@ -249,4 +255,151 @@ function renderTapCards(opts,target,word,bob){
 }
 function onTap(c,target){
   ac();
-  if(c.getAttribute("data-v")==="
+  if(c.getAttribute("data-v")===""+target){
+    sfxGood(); c.classList.add("good");
+    speak(target,0.8);
+    roundI++; roundLive=false;
+    setTimeout(nextRound,1100);
+  } else {
+    sfxTry(); c.classList.add("bad"); misses++;
+    setTimeout(function(){c.classList.remove("bad");},450);
+    speak(misses<2?"Casi. Escucha otra vez: ¿dónde dice "+target+"?":"Mira la que brilla: "+target);
+    if(misses>=2){ $("cards").querySelectorAll(".card").forEach(function(x){
+      if(x.getAttribute("data-v")===""+target) x.classList.add("hint"); }); }
+  }
+}
+// ---- build a word from syllable cards ----
+function renderBuild(L){
+  buildI=0;
+  var slotsH=""; L.parts.forEach(function(){ slotsH+='<div class="slot"></div>'; });
+  $("slots").innerHTML=slotsH;
+  var pool=shuffle(L.parts.concat(L.extra||[]));
+  var h=""; pool.forEach(function(o){ h+='<button class="card small" data-v="'+o+'">'+o+'</button>'; });
+  $("cards").innerHTML=h;
+  dots(L.parts.length,0);
+  setPrompt("Arma: "+L.word, "Vamos a armar "+L.say+". Toca "+L.parts[0]);
+  speak("Toca "+L.parts[0]);
+  $("cards").querySelectorAll(".card").forEach(function(c){
+    c.addEventListener("click",function(){ onBuildTap(c,L); });
+  });
+}
+function onBuildTap(c,L){
+  ac();
+  var need=L.parts[buildI];
+  if(c.getAttribute("data-v")===""+need && !c.classList.contains("gone")){
+    sfxGood(); c.classList.add("good");
+    var slot=$("slots").children[buildI];
+    setTimeout(function(){ c.classList.add("gone"); slot.textContent=need; slot.classList.add("filled"); },250);
+    buildI++; dots(L.parts.length,buildI); misses=0;
+    if(buildI>=L.parts.length){
+      setTimeout(function(){
+        speak(L.parts.join("... ")+"... ¡"+L.say+"!",0.85,null);
+        sfxWin(); confetti(26);
+        setTimeout(levelDone,1500);
+      },600);
+    } else { speak("¡Bien! Ahora toca "+L.parts[buildI]); }
+  } else {
+    sfxTry(); c.classList.add("bad"); misses++;
+    setTimeout(function(){c.classList.remove("bad");},450);
+    speak(misses<2?"Esa no. Toca "+need:"La que brilla: "+need);
+    if(misses>=2){ $("cards").querySelectorAll(".card").forEach(function(x){
+      if(x.getAttribute("data-v")===""+need&&!x.classList.contains("gone")) x.classList.add("hint"); }); }
+  }
+}
+// ---- build the final phrase from word cards ----
+function renderPhrase(L){
+  buildI=0;
+  var slotsH=""; L.words.forEach(function(){ slotsH+='<div class="slot wordslot"></div>'; });
+  $("slots").innerHTML=slotsH;
+  var pool=shuffle(L.words);
+  var h=""; pool.forEach(function(o){ h+='<button class="card word small" data-v="'+o+'">'+o+'</button>'; });
+  $("cards").innerHTML=h;
+  dots(L.words.length,0);
+  setPrompt("Arma la frase", "Vamos a armar la frase. Toca "+L.words[0]);
+  speak("Toca "+L.words[0]);
+  $("cards").querySelectorAll(".card").forEach(function(c){
+    c.addEventListener("click",function(){ onPhraseTap(c,L); });
+  });
+}
+function onPhraseTap(c,L){
+  ac();
+  var need=L.words[buildI];
+  if(c.getAttribute("data-v")===""+need && !c.classList.contains("gone")){
+    sfxGood(); c.classList.add("good");
+    var slot=$("slots").children[buildI];
+    setTimeout(function(){ c.classList.add("gone"); slot.textContent=need; slot.classList.add("filled"); },250);
+    buildI++; dots(L.words.length,buildI); misses=0;
+    if(buildI>=L.words.length){
+      setTimeout(function(){
+        speak("Mi... mamá... me... ama. ¡Mi mamá me ama!",0.8);
+        sfxWin(); confetti(60);
+        setTimeout(finalScreen,2400);
+      },600);
+    } else { speak("¡Sí! Ahora toca "+L.words[buildI]); }
+  } else {
+    sfxTry(); c.classList.add("bad"); misses++;
+    setTimeout(function(){c.classList.remove("bad");},450);
+    speak(misses<2?"Esa no. Toca "+need:"La que brilla: "+need);
+    if(misses>=2){ $("cards").querySelectorAll(".card").forEach(function(x){
+      if(x.getAttribute("data-v")===""+need&&!x.classList.contains("gone")) x.classList.add("hint"); }); }
+  }
+}
+// ---- level complete / final ----
+var starred={};
+var WINWORDS=["¡Muy bien!","¡Lo lograste!","¡Eres campeón!","¡Qué bien lees!","¡Excelente!"];
+function levelDone(){
+  roundLive=false;
+  if(curLv>=unlocked){ unlocked=curLv+1; }
+  if(!starred[curLv]){ starred[curLv]=1; stars++; }
+  $("starN").textContent=stars;
+  sfxWin(); confetti(30);
+  $("winTxt").textContent=WINWORDS[curLv%WINWORDS.length]+" ⭐";
+  speak(WINWORDS[curLv%WINWORDS.length]+" ¡Ganaste una estrella!");
+  $("ovl").classList.add("on");
+}
+function finalScreen(){
+  roundLive=false;
+  if(curLv>=unlocked) unlocked=curLv+1;
+  if(!starred[curLv]){ starred[curLv]=1; stars++; }
+  $("starN").textContent=stars;
+  show("scrFinal"); stopMap();
+  confetti(80);
+  speak("¡Leíste la frase entera! ¡Mi mamá me ama! Eres campeón del Planeta Eme. ¡Ve a darle un abrazo a tu mamá!",0.9);
+}
+$("nextBtn").addEventListener("click",function(){
+  $("ovl").classList.remove("on"); sfxTap();
+  if(unlocked>=LEVELS.length){ finalScreen(); return; }
+  show("scrMap"); if(!mapTimer) mapLoop();
+});
+$("homeBtn").addEventListener("click",function(){ sfxTap(); if(window.speechSynthesis)speechSynthesis.cancel(); $("ovl").classList.remove("on"); roundLive=false; show("scrMap"); if(!mapTimer) mapLoop(); });
+$("playBtn").addEventListener("click",function(){ ac(); sfxTap(); startLevel(Math.min(unlocked,LEVELS.length-1)); });
+$("againBtn").addEventListener("click",function(){ unlocked=0; stars=0; starred={}; $("starN").textContent="0"; sfxTap(); show("scrMap"); if(!mapTimer) mapLoop(); });
+$("sayBtn").addEventListener("click",function(){ ac(); if(lastPrompt) speak(lastPrompt); });
+$("muteBtn").addEventListener("click",function(){ muted=!muted; this.textContent=muted?"🔇":"🔈"; if(muted&&window.speechSynthesis)speechSynthesis.cancel(); });
+
+document.addEventListener("touchstart",function(){ ac(); },{once:true});
+
+// initialize: start only after touch gesture on mobile to unlock audio
+function startApp(){ pickVoice(); drawMap(); mapLoop(); }
+if(('ontouchstart' in window) || navigator.maxTouchPoints > 0){
+  var ts = document.getElementById('touchStart');
+  ts.style.display = 'none'; // default hidden until DOM ready
+  // show overlay a tick later to avoid flash during pages load
+  setTimeout(function(){ ts.style.display = 'flex'; }, 120);
+  var startBtn = document.getElementById('startBtn');
+  function doStart(){
+    ac();
+    try{ if(window.speechSynthesis) speechSynthesis.getVoices(); }catch(e){}
+    ts.style.display = 'none';
+    startApp();
+  }
+  startBtn.addEventListener('click', doStart, {once:true});
+  document.addEventListener('touchstart', doStart, {once:true});
+} else {
+  // desktop - start immediately
+  startApp();
+}
+
+</script>
+</body>
+</html>
